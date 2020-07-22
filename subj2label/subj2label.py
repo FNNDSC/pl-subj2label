@@ -12,6 +12,7 @@
 
 import os
 import sys
+import shutil
 sys.path.append(os.path.dirname(__file__))
 
 # import the Chris app superclass
@@ -138,6 +139,56 @@ class Subj2label(ChrisApp):
         """
         print(Gstr_title)
         print('Version: %s' % self.get_version())
+        
+        errors = ""
+        
+        # Define the output path
+        output_path = options.outputdir
+        
+        # Get a list of subjects present in inputdir
+        subjects = os.listdir(options.inputdir)
+        
+        subj_count = len(subjects)
+        
+        
+        # Get a list of labels available
+        labels = os.listdir(options.inputdir + "/" + subjects[0])
+        
+        label_count = len(labels)
+        
+        copy_count = 0
+        # Create label wise folder containing label wise info from all subjects
+        for label in labels:
+            label_path = options.outputdir + "/" + label
+            if not os.path.isdir(label_path):
+                print ("\n\n\n### Creating %s ... ###" %label_path)
+                os.mkdir(label_path)
+            for subject in subjects:
+                # path of a subject inside a label
+                subject_in_label_path = label_path + "/" + subject
+                if not os.path.isdir(subject_in_label_path):
+                    print ("### Creating %s ... ###" %subject_in_label_path)
+                    os.mkdir(subject_in_label_path)
+                    
+                # Now copy contents from src to destination
+                src = options.inputdir + "/" + subject + "/" + label + "/"
+                print ("### Copying files from %s to %s ... ###" %(src,subject_in_label_path))
+                try:
+                    shutil.copytree(src, subject_in_label_path,dirs_exist_ok=True)
+                    copy_count += 1
+                except:
+                    errors = errors + "\n Folder not found for %s in %s" %(label,subject)
+                
+        print ("\n\n\n###################### SUMMARY #############################")
+        print ("\n\n*** Total labels found : %s ***" %label_count)        
+        print ("\n\n*** Total subjects found : %s ***" %subj_count ) 
+        print ("\n\n*** Total folders copied : %s ***" %copy_count )
+        if copy_count == label_count * subj_count:        
+            print ("\n\n*** All files copied and sorted successfully ***")
+        else:
+            print("\n\n************ Errors ***********")
+            print (errors)
+        
 
     def show_man_page(self):
         """
