@@ -13,6 +13,7 @@
 import os
 import sys
 import shutil
+from tqdm import tqdm
 sys.path.append(os.path.dirname(__file__))
 
 # import the Chris app superclass
@@ -21,8 +22,14 @@ from chrisapp.base import ChrisApp
 
 Gstr_title = """
 
-Generate a title from 
-http://patorjk.com/software/taag/#p=display&f=Doom&t=subj2label
+           _     _  _____  _       _          _ 
+          | |   (_)/ __  \| |     | |        | |
+ ___ _   _| |__  _ `' / /'| | __ _| |__   ___| |
+/ __| | | | '_ \| |  / /  | |/ _` | '_ \ / _ \ |
+\__ \ |_| | |_) | |./ /___| | (_| | |_) |  __/ |
+|___/\__,_|_.__/| |\_____/|_|\__,_|_.__/ \___|_|
+               _/ |                             
+              |__/                              
 
 """
 
@@ -132,6 +139,15 @@ class Subj2label(ChrisApp):
         Define the CLI arguments accepted by this plugin app.
         Use self.add_argument to specify a new app argument.
         """
+        
+        self.add_argument('--targetdir', dest='targetdir', type=str,
+                          optional=False, help='name of the folder containing raw image slices within the inputDir', default = "")
+                          
+        self.add_argument('--rawdir', dest='rawdir', type=str,
+                          optional=True, help='name of the directory that will contain the raw data slices for a subject', default = "train")
+                          
+        self.add_argument( '--segdir', dest='segdir', type=str,
+                          optional=True, help='name of the directory that will contain the segmented data slices for a subject', default = "mask")                  
 
     def run(self, options):
         """
@@ -140,7 +156,14 @@ class Subj2label(ChrisApp):
         print(Gstr_title)
         print('Version: %s' % self.get_version())
         
-        errors = ""
+        # All user input paths
+        if options.targetdir == "":
+            print ("*** ERROR ***\n\n--targetdir must be specified")
+            exit()
+        raw_data = options.rawdir
+        seg_data = options.segdir
+        
+        warnings = ""
         
         # Define the output path
         output_path = options.outputdir
@@ -154,40 +177,63 @@ class Subj2label(ChrisApp):
         # Get a list of labels available
         labels = os.listdir(options.inputdir + "/" + subjects[0])
         
+        ## Remove folder containing raw data slices from labels
+        if os.path.exists(options.inputdir + "/" + subjects[0] + "/"+options.targetdir):
+            labels.remove(options.targetdir)
+        
         label_count = len(labels)
         
+        # Delete any existing data
+        output_count = len(os.listdir(options.outputdir))
+        if output_count!=0:
+            print ("\n*** Deleting existing files ***")
+            for folder in tqdm(os.listdir(options.outputdir)):
+                shutil.rmtree(output_path+"/"+folder,ignore_errors=True)
+                
         copy_count = 0
         # Create label wise folder containing label wise info from all subjects
-        for label in labels:
+        print ("\n*** Creating label folders ***")
+        for label in tqdm(labels):
             label_path = options.outputdir + "/" + label
             if not os.path.isdir(label_path):
-                print ("\n\n\n### Creating %s ... ###" %label_path)
+                #print ("\n\n\n### Creating %s ... ###" %label_path)
                 os.mkdir(label_path)
             for subject in subjects:
                 # path of a subject inside a label
                 subject_in_label_path = label_path + "/" + subject
                 if not os.path.isdir(subject_in_label_path):
-                    print ("### Creating %s ... ###" %subject_in_label_path)
+                    #print ("### Creating %s ... ###" %subject_in_label_path)
                     os.mkdir(subject_in_label_path)
+                    os.mkdir(subject_in_label_path +"/%s" %raw_data)
+                    os.mkdir(subject_in_label_path +"/%s" %seg_data)
                     
                 # Now copy contents from src to destination
+               
+                target_path = options.inputdir + "/"+ subject+"/" + options.targetdir
+                if not os.path.exists(target_path):
+                    print ("\n\n*** ERROR ***\n%s does not exist" %target_path)
+                    exit()
+                # Copy raw data slices from the target path to raw data dir
+                shutil.copytree(target_path, subject_in_label_path+"/%s" %raw_data,dirs_exist_ok=True)
                 src = options.inputdir + "/" + subject + "/" + label + "/"
-                print ("### Copying files from %s to %s ... ###" %(src,subject_in_label_path))
+                #print ("### Copying files from %s to %s ... ###" %(src,subject_in_label_path+"/%s"%seg_data))
                 try:
-                    shutil.copytree(src, subject_in_label_path,dirs_exist_ok=True)
+                    shutil.copytree(src, subject_in_label_path+"/%s"%seg_data,dirs_exist_ok=True)
                     copy_count += 1
                 except:
-                    errors = errors + "\n Folder not found for %s in %s" %(label,subject)
+                    warnings = warnings + "\n Folder not found for %s in %s" %(label,subject)
                 
         print ("\n\n\n###################### SUMMARY #############################")
         print ("\n\n*** Total labels found : %s ***" %label_count)        
         print ("\n\n*** Total subjects found : %s ***" %subj_count ) 
         print ("\n\n*** Total folders copied : %s ***" %copy_count )
+        print ("\n\n*** Feature slices are stored in %s folder of a subject ***" %seg_data)
+        print ("\n\n*** Reference slices are stored in %s folder of a subject ***" %raw_data)
         if copy_count == label_count * subj_count:        
             print ("\n\n*** All files copied and sorted successfully ***")
         else:
-            print("\n\n************ Errors ***********")
-            print (errors)
+            print("\n\n************ Warnings ***********")
+            print (warnings)
         
 
     def show_man_page(self):
