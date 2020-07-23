@@ -192,17 +192,16 @@ class Subj2label(ChrisApp):
                 
         copy_count = 0
         # Create label wise folder containing label wise info from all subjects
-        print ("\n*** Creating label folders ***")
-        for label in tqdm(labels):
+        for label in labels:
             label_path = options.outputdir + "/" + label
             if not os.path.isdir(label_path):
-                #print ("\n\n\n### Creating %s ... ###" %label_path)
+                print ("\n\n\n### Creating %s ... ###" %label_path)
                 os.mkdir(label_path)
             for subject in subjects:
                 # path of a subject inside a label
                 subject_in_label_path = label_path + "/" + subject
                 if not os.path.isdir(subject_in_label_path):
-                    #print ("### Creating %s ... ###" %subject_in_label_path)
+                    print ("### Creating %s ... ###" %subject_in_label_path)
                     os.mkdir(subject_in_label_path)
                     os.mkdir(subject_in_label_path +"/%s" %raw_data)
                     os.mkdir(subject_in_label_path +"/%s" %seg_data)
@@ -216,12 +215,14 @@ class Subj2label(ChrisApp):
                 # Copy raw data slices from the target path to raw data dir
                 shutil.copytree(target_path, subject_in_label_path+"/%s" %raw_data,dirs_exist_ok=True)
                 src = options.inputdir + "/" + subject + "/" + label + "/"
-                #print ("### Copying files from %s to %s ... ###" %(src,subject_in_label_path+"/%s"%seg_data))
+                
                 try:
                     shutil.copytree(src, subject_in_label_path+"/%s"%seg_data,dirs_exist_ok=True)
                     copy_count += 1
+                    print ("### Copying files from %s to %s ... ###" %(src,subject_in_label_path+"/%s"%seg_data))
                 except:
                     warnings = warnings + "\n Folder not found for %s in %s" %(label,subject)
+                    shutil.rmtree(subject_in_label_path)
                 
         print ("\n\n\n###################### SUMMARY #############################")
         print ("\n\n*** Total labels found : %s ***" %label_count)        
