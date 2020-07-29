@@ -140,14 +140,16 @@ class Subj2label(ChrisApp):
         Use self.add_argument to specify a new app argument.
         """
         
-        self.add_argument('--targetdir', dest='targetdir', type=str,
+        self.add_argument('--refIn', dest='refIn', type=str,
                           optional=False, help='name of the folder containing raw image slices within the inputDir', default = "")
                           
-        self.add_argument('--rawdir', dest='rawdir', type=str,
-                          optional=True, help='name of the directory that will contain the raw data slices for a subject', default = "train")
+        self.add_argument('--refOut', dest='refOut', type=str,
+                          optional=True, help='name of the directory that will contain the raw data slices for a subject', default = "reference")
                           
-        self.add_argument( '--segdir', dest='segdir', type=str,
-                          optional=True, help='name of the directory that will contain the segmented data slices for a subject', default = "mask")                  
+        self.add_argument( '--featPref', dest='featPref', type=str,
+                          optional=True, help='Prefix of the directory that contains the segmented data slices for a subject', default = "")  
+        self.add_argument( '--featOut', dest='featOut', type=str,
+                          optional=True, help='Name of the directory that will contain the segmented data slices for a subject', default = "features")                     
 
     def run(self, options):
         """
@@ -157,11 +159,11 @@ class Subj2label(ChrisApp):
         print('Version: %s' % self.get_version())
         
         # All user input paths
-        if options.targetdir == "":
-            print ("*** ERROR ***\n\n--targetdir must be specified")
+        if options.refIn == "":
+            print ("*** ERROR ***\n\n--refIn <Directory containing reference data slices> must be specified")
             exit()
-        raw_data = options.rawdir
-        seg_data = options.segdir
+        raw_data = options.refOut
+        seg_data = options.featOut
         
         warnings = ""
         
@@ -178,8 +180,8 @@ class Subj2label(ChrisApp):
         labels = os.listdir(options.inputdir + "/" + subjects[0])
         
         ## Remove folder containing raw data slices from labels
-        if os.path.exists(options.inputdir + "/" + subjects[0] + "/"+options.targetdir):
-            labels.remove(options.targetdir)
+        if os.path.exists(options.inputdir + "/" + subjects[0] + "/"+options.refIn):
+            labels.remove(options.refIn)
         
         label_count = len(labels)
         
@@ -208,7 +210,7 @@ class Subj2label(ChrisApp):
                     
                 # Now copy contents from src to destination
                
-                target_path = options.inputdir + "/"+ subject+"/" + options.targetdir
+                target_path = options.inputdir + "/"+ subject+"/" + options.refIn
                 if not os.path.exists(target_path):
                     print ("\n\n*** ERROR ***\n%s does not exist" %target_path)
                     exit()
