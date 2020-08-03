@@ -230,8 +230,8 @@ class Subj2label(ChrisApp):
         print ("\n\n*** Total labels found : %s ***" %label_count)        
         print ("\n\n*** Total subjects found : %s ***" %subj_count ) 
         print ("\n\n*** Total folders copied : %s ***" %copy_count )
-        print ("\n\n*** Feature slices are stored in %s folder of a subject ***" %seg_data)
-        print ("\n\n*** Reference slices are stored in %s folder of a subject ***" %raw_data)
+        print ("\n\n*** Feature slices are stored in %s directory of a subject ***" %seg_data)
+        print ("\n\n*** Reference slices are stored in %s directory of a subject ***" %raw_data)
         if copy_count == label_count * subj_count:        
             print ("\n\n*** All files copied and sorted successfully ***")
         else:
