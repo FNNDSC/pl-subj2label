@@ -199,14 +199,20 @@ class Subj2label(ChrisApp):
             if not os.path.isdir(label_path):
                 print ("\n\n\n### Creating %s ... ###" %label_path)
                 os.mkdir(label_path)
+                raw_in_label_path = label_path + "/" + raw_data
+                features_in_label_path = label_path + "/" + seg_data
+                os.mkdir(raw_in_label_path)
+                os.mkdir(features_in_label_path)
+                
             for subject in subjects:
                 # path of a subject inside a label
-                subject_in_label_path = label_path + "/" + subject
+                # make two paths, one for features and one for raw data
+                
+                subject_in_label_path = features_in_label_path + "/" + subject
                 if not os.path.isdir(subject_in_label_path):
                     print ("### Creating %s ... ###" %subject_in_label_path)
                     os.mkdir(subject_in_label_path)
-                    os.mkdir(subject_in_label_path +"/%s" %raw_data)
-                    os.mkdir(subject_in_label_path +"/%s" %seg_data)
+                    os.mkdir(raw_in_label_path +"/%s" %subject)
                     
                 # Now copy contents from src to destination
                
@@ -215,16 +221,17 @@ class Subj2label(ChrisApp):
                     print ("\n\n*** ERROR ***\n%s does not exist" %target_path)
                     exit()
                 # Copy raw data slices from the target path to raw data dir
-                shutil.copytree(target_path, subject_in_label_path+"/%s" %raw_data,dirs_exist_ok=True)
+                shutil.copytree(target_path, raw_in_label_path+"/%s" %subject,dirs_exist_ok=True)
                 src = options.inputdir + "/" + subject + "/" + label + "/"
                 
                 try:
-                    shutil.copytree(src, subject_in_label_path+"/%s"%seg_data,dirs_exist_ok=True)
+                    shutil.copytree(src, subject_in_label_path,dirs_exist_ok=True)
                     copy_count += 1
                     print ("### Copying files from %s to %s ... ###" %(src,subject_in_label_path+"/%s"%seg_data))
                 except:
                     warnings = warnings + "\n Folder not found for %s in %s" %(label,subject)
                     shutil.rmtree(subject_in_label_path)
+                    shutil.rmtree(raw_in_label_path +"/%s" %subject)
                 
         print ("\n\n\n###################### SUMMARY #############################")
         print ("\n\n*** Total labels found : %s ***" %label_count)        
